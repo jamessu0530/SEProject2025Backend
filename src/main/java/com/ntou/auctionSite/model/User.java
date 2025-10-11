@@ -8,6 +8,7 @@ public class User {
     private String UserName;    // 使用者名稱
     private String Password;    // 使用者密碼(經過hash處理)
     private String UserNickname;// 使用者暱稱
+    private Cart cart;          // 使用者購物車
     private String Email;       // 使用者Email
     private String Address;     // 使用者地址
     private String PhoneNumber; // 使用者電話號碼
@@ -72,5 +73,4 @@ public class User {
     //收藏清單
     public ArrayList<Product> getFavoriteList() { return favoriteList; }
     public void setFavoriteList(ArrayList<Product> favoriteList) { this.favoriteList = favoriteList; }
-
 }

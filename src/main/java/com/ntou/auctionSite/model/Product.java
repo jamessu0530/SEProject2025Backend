@@ -8,12 +8,12 @@ public class Product {
     private String SellerID;                //賣家ID
     private String ProductName;             //產品名稱
     private String ProductDescription;      //產品描述
-    private int ProductPrice;            //產品價格
+    private int ProductPrice;               //產品價格
     private String ProductImage;            //產品圖片URL
-    private ProductTypes ProductType;       //產品類型 (DIRECT or AUCTION)
+    private ProductTypes ProductType;       //產品類型 (DIRECT, AUCTION)
     private int ProductStock;               //產品庫存量
     private String ProductCategory;         //產品類別
-    private String ProductStatus;           //產品狀態 ('ACTIVE', 'INACTIVE', 'SOLD', 'BANNED')
+    private String ProductStatus;           //產品狀態
     private LocalDateTime CreatedTime;      //產品建立時間
     private LocalDateTime UpdatedTime;      //產品更新時間
     private LocalDateTime AuctionEndTime;   //拍賣結束時間 (僅限拍賣產品)
@@ -23,9 +23,9 @@ public class Product {
     private double AverageRating;           //產品平均評分
     private int ReviewCount;                //產品評論數量
     private int TotalSales;                 //產品總銷售量
+    enum ProductStatuses { ACTIVE, INACTIVE, SOLD, BANNED }//有效、無效、已售出、已封鎖
 
     public Product() {
-        // Default constructor
     }
 
     //產品ID
@@ -86,3 +86,4 @@ public class Product {
     public int getTotalSales() { return TotalSales; }
     public void setTotalSales(int totalSales) { TotalSales = totalSales; }
 }
+
