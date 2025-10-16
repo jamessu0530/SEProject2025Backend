@@ -7,5 +7,5 @@ public interface UserService {
     User loginService(String id, String password);
 
     //註冊功能
-    User registerService(User user);
+    void registerService(User user);
 }

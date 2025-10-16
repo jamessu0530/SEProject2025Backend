@@ -1,11 +1,15 @@
 package com.ntou.auctionSite.service.serviceImpl;
 
 import com.ntou.auctionSite.model.User;
+import com.ntou.auctionSite.repository.LoginRepository;
 import com.ntou.auctionSite.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserServiceImpl implements UserService {
+    @Autowired
+    private LoginRepository loginRepository;
 
     @Override
     public User loginService(String id, String password) {
@@ -13,7 +17,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User registerService(User user) {
-        return null;
+    public void registerService(User user) {
+        // 可在此加入驗證、加密密碼等邏輯
+        loginRepository.save(user);
     }
 }
