@@ -14,11 +14,13 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    //測試伺服器是否運行
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Service is running");
     }
 
+    //註冊功能
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody User user) {
         userService.registerService(user);
