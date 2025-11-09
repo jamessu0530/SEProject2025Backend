@@ -13,6 +13,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+@CrossOrigin("https://se-project2025-frontend-8qpw.vercel.app/")
 @RestController
 public class BidController {
     @Autowired BidService bidservice;
