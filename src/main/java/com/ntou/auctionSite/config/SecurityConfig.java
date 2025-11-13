@@ -29,7 +29,7 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Value("${cors.allowed-origins:https://se-project2025-frontend-8qpw.vercel.app,http://localhost:3000}")
+    @Value("${cors.allowed-origins}")
     private String allowedOrigins;
 
     @Bean
