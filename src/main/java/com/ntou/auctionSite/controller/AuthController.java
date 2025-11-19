@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin("http://localhost:5173")
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "認證管理", description = "使用者註冊、登入相關 API")
