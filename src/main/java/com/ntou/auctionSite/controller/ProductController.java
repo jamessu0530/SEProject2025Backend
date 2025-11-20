@@ -3,29 +3,58 @@ package com.ntou.auctionSite.controller;
 import java.util.*;
 
 import com.ntou.auctionSite.model.Product;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ntou.auctionSite.service.ProductService;
-//open postman and select POST
-// http://localhost:8080/products/add
-// {
-//      "productID": "P001",
-//      "sellerID": "S001",
-//      "productName": "餅乾",
-//      "productPrice": 100,
-//      "productType": "DIRECT"
-// }
+
 @CrossOrigin("http://localhost:5173")
 @RestController
+@Tag(name = "商品管理", description = "商品相關 API - 新增、查詢、修改、上下架、刪除商品等功能")
 public class ProductController { // 負責處理商品新增、上下架、查看、修改的class
     @Autowired
     private ProductService productService;
 
     //<?>表示可以是任何型態,前端可以提供第幾頁、每頁大小
     @GetMapping("/products/")
-    public ResponseEntity<?> getAllProduct(@RequestParam(defaultValue = "1") int page,
-                                           @RequestParam(defaultValue = "10") int pageSize) {
+    @Operation(
+            summary = "取得商品列表（分頁）",
+            description = "分頁查詢所有商品，支援自訂每頁商品數量"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "成功取得商品列表",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Product.class),
+                            examples = @ExampleObject(
+                                    value = "[{\"productID\":\"P001\",\"productName\":\"餅乾\",\"productPrice\":100,\"productType\":\"DIRECT\",\"productStatus\":\"AVAILABLE\"}]"
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "伺服器錯誤",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Error fetching products: xxx")
+                    )
+            )
+    })
+    public ResponseEntity<?> getAllProduct(
+            @Parameter(description = "頁碼（從1開始）", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "每頁商品數量", example = "10")
+            @RequestParam(defaultValue = "10") int pageSize) {
         try {
             List<Product> products = productService.getProductsByPage(page, pageSize);
             return ResponseEntity.ok(products);
@@ -36,7 +65,42 @@ public class ProductController { // 負責處理商品新增、上下架、查�
     }
 
     @GetMapping("/products/{id}")
-    public ResponseEntity<?> getProductById(@PathVariable String id) {
+    @Operation(
+            summary = "取得單一商品資訊",
+            description = "根據商品 ID 查詢商品詳細資訊"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "成功取得商品資訊",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Product.class),
+                            examples = @ExampleObject(
+                                    value = "{\"productID\":\"P001\",\"sellerID\":\"S001\",\"productName\":\"餅乾\",\"productPrice\":100,\"productType\":\"DIRECT\",\"productStatus\":\"AVAILABLE\"}"
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "找不到商品",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product not found with ID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "伺服器錯誤",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Server error: xxx")
+                    )
+            )
+    })
+    public ResponseEntity<?> getProductById(
+            @Parameter(description = "商品ID", example = "P001", required = true)
+            @PathVariable String id) {
         try {
             return ResponseEntity.ok(productService.getProductById(id));
         }
@@ -49,7 +113,49 @@ public class ProductController { // 負責處理商品新增、上下架、查�
     }
 
     @PostMapping("/products/add") // 新增商品
-    public ResponseEntity<?> createProduct(@RequestBody Product product) {
+    @Operation(
+            summary = "新增商品",
+            description = "建立新商品，商品預設狀態為 PENDING（待上架）"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "商品建立成功",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product created successfully! ProductID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "請求資料格式錯誤或商品資料不符合規定",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Error creating product: 商品名稱不可為空")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "伺服器錯誤",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Server error: xxx")
+                    )
+            )
+    })
+    public ResponseEntity<?> createProduct(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "商品資料",
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Product.class),
+                            examples = @ExampleObject(
+                                    value = "{\"productID\":\"P001\",\"sellerID\":\"S001\",\"productName\":\"餅乾\",\"productPrice\":100,\"productType\":\"DIRECT\"}"
+                            )
+                    )
+            )
+            @RequestBody Product product) {
         try {
             Product saved = productService.createProduct(product);
             return ResponseEntity.status(201).body("Product created successfully! ProductID: " + saved.getProductID());
@@ -63,7 +169,51 @@ public class ProductController { // 負責處理商品新增、上下架、查�
     }
 
     @PutMapping("/products/edit/{id}") // 修改商品
-    public ResponseEntity<?> editProduct(@RequestBody Product request,@PathVariable String id) {
+    @Operation(
+            summary = "修改商品資訊",
+            description = "更新商品的基本資訊（名稱、價格、描述等）"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "商品更新成功",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product updated successfully! ProductID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "找不到商品",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product not found with ID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "伺服器錯誤",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Server error: xxx")
+                    )
+            )
+    })
+    public ResponseEntity<?> editProduct(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "更新的商品資料",
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Product.class),
+                            examples = @ExampleObject(
+                                    value = "{\"productName\":\"巧克力餅乾\",\"productPrice\":150}"
+                            )
+                    )
+            )
+            @RequestBody Product request,
+            @Parameter(description = "商品ID", example = "P001", required = true)
+            @PathVariable String id) {
         try {
             Product update = productService.editProduct(request, id);
             return ResponseEntity.ok("Product updated successfully! ProductID: " + update.getProductID());
@@ -77,7 +227,39 @@ public class ProductController { // 負責處理商品新增、上下架、查�
     }
 
     @PutMapping("/products/upload/{id}") // 上架商品
-    public ResponseEntity<?> publishProduct(@PathVariable String id) {
+    @Operation(
+            summary = "上架商品",
+            description = "將商品狀態改為 AVAILABLE（已上架），使商品可供購買"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "商品上架成功",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product published successfully! ProductID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "找不到商品",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product not found with ID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "伺服器錯誤",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Server error: xxx")
+                    )
+            )
+    })
+    public ResponseEntity<?> publishProduct(
+            @Parameter(description = "商品ID", example = "P001", required = true)
+            @PathVariable String id) {
         try {
             Product published = productService.publishProduct(id);
             return ResponseEntity.ok("Product published successfully! ProductID: " + published.getProductID());
@@ -91,7 +273,39 @@ public class ProductController { // 負責處理商品新增、上下架、查�
     }
 
     @PutMapping("/products/withdraw/{id}") // 下架商品
-    public ResponseEntity<?> withdrawProduct(@PathVariable String id) {
+    @Operation(
+            summary = "下架商品",
+            description = "將商品狀態改為 UNAVAILABLE（已下架），商品將不可購買"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "商品下架成功",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product withdrawn successfully! ProductID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "找不到商品",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product not found with ID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "伺服器錯誤",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Server error: xxx")
+                    )
+            )
+    })
+    public ResponseEntity<?> withdrawProduct(
+            @Parameter(description = "商品ID", example = "P001", required = true)
+            @PathVariable String id) {
         try {
             Product withdrawn = productService.withdrawProduct(id);
             return ResponseEntity.ok("Product withdrawn successfully! ProductID: " + withdrawn.getProductID());
@@ -104,7 +318,39 @@ public class ProductController { // 負責處理商品新增、上下架、查�
         }
     }
     @DeleteMapping("/products/delete/{id}")//刪除產品
-    public ResponseEntity<?> deleteProduct(@PathVariable String id) {
+    @Operation(
+            summary = "刪除商品",
+            description = "永久刪除商品資料"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "商品刪除成功",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product deleted successfully! ProductID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "找不到商品",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Product not found with ID: P001")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "伺服器錯誤",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(value = "Server error: xxx")
+                    )
+            )
+    })
+    public ResponseEntity<?> deleteProduct(
+            @Parameter(description = "商品ID", example = "P001", required = true)
+            @PathVariable String id) {
         try {
             productService.deleteProduct(id);
             return ResponseEntity.ok("Product deleted successfully! ProductID: " + id);
