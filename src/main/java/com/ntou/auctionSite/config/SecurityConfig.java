@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -38,6 +39,8 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 啟用 CORS
             .csrf(csrf -> csrf.disable())                          // 禁用 CSRF 保護
             .authorizeHttpRequests( auth -> { auth
+                    .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll() // 允許所有人訪問商品列表和詳情
+                    .requestMatchers("/api/products/**").authenticated()
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // 允許訪問 Swagger UI
                     .anyRequest().authenticated();
