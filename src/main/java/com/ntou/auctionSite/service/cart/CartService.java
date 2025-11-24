@@ -1,101 +1,145 @@
 package com.ntou.auctionSite.service.cart;
 
+import com.ntou.auctionSite.dto.cart.CartItemDTO;
+import com.ntou.auctionSite.dto.cart.CartResponseDTO;
 import com.ntou.auctionSite.model.cart.Cart;
+import com.ntou.auctionSite.model.product.Product;
 import com.ntou.auctionSite.model.user.User;
+import com.ntou.auctionSite.repository.CartRepository;
+import com.ntou.auctionSite.repository.ProductRepository;
 import com.ntou.auctionSite.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-
 public class CartService {
+
+    @Autowired
+    private CartRepository cartRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     @Autowired
     private UserRepository userRepository;
 
     /**
-     * 取得使用者購物車
+     * 取得使用者購物車（完整資訊）
      */
-    public Cart getCart(String username) {
-        User user = userRepository.findByUserName(username)
-                .orElseThrow(() -> new RuntimeException("找不到用戶，user id: " + username));
-        return user.getCart();
+    public CartResponseDTO getUserCart(String userId) {
+        // 1. 從資料庫查詢購物車
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElse(new Cart(userId, userId, new ArrayList<>()));
+
+        // 2. 組合每個項目的完整資訊（商品資訊 + 賣家資訊）
+        List<CartItemDTO> items = cart.getItems().stream()
+                .map(item -> {
+                    Product product = productRepository.findById(item.getProductId())
+                            .orElseThrow(() -> new RuntimeException("商品不存在: " + item.getProductId()));
+
+                    User seller = userRepository.findById(product.getSellerID())
+                            .orElseThrow(() -> new RuntimeException("賣家不存在: " + product.getSellerID()));
+
+                    return new CartItemDTO(
+                            item.getItemId(),              // 項目 ID
+                            product.getProductID(),        // 商品 ID
+                            product.getProductName(),      // 商品名稱
+                            product.getProductPrice(),     // 商品價格
+                            product.getProductImage(),     // 商品圖片
+                            seller.getId(),                // 賣家 ID
+                            seller.getUsername(),          // 賣家名稱
+                            item.getQuantity(),            // 數量
+                            product.getProductPrice() * item.getQuantity()  // 小計
+                    );
+                })
+                .collect(Collectors.toList());
+
+        // 3. 計算總金額
+        int totalAmount = items.stream()
+                .mapToInt(CartItemDTO::getSubtotal)
+                .sum();
+
+        return new CartResponseDTO(userId, items, totalAmount, items.size());
     }
 
     /**
-     * 將商品加入使用者購物車
+     * 將商品加入購物車
      */
-    public Cart addToCart(String username, String productId, int quantity) {
-        User user = userRepository.findByUserName(username)
-                .orElseThrow(() -> new RuntimeException("找不到用戶，username: " + username));
-        Cart cart = user.getCart();
+    public Cart addToCart(String userId, String productId, int quantity) {
+        // 驗證商品是否存在
+        productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("商品不存在: " + productId));
 
+        // 查詢或建立購物車
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElse(new Cart(userId, userId, new ArrayList<>()));
+
+        // 檢查商品是否已存在於購物車
         Optional<Cart.CartItem> existingItem = cart.getItems().stream()
-                .filter(cartItem ->  cartItem.getProductID().equals(productId))
+                .filter(item -> item.getProductId().equals(productId))
                 .findFirst();
-        if (existingItem.isPresent()){
+
+        if (existingItem.isPresent()) {
+            // 已存在則累加數量
             Cart.CartItem item = existingItem.get();
             item.setQuantity(item.getQuantity() + quantity);
-        }else{
+        } else {
+            // 不存在則新增項目（會自動生成 itemId）
             cart.getItems().add(new Cart.CartItem(productId, quantity));
         }
 
-        userRepository.save(user);
-        return cart;
+        // 儲存到資料庫
+        return cartRepository.save(cart);
     }
 
     /**
-     * 更新商品數量
+     * 更新商品數量（透過 itemId）
      */
-    public Cart updateQuantity(String username, String productId, int quantity){
-        User user = userRepository.findByUserName(username)
-                .orElseThrow(()->new RuntimeException("找不到用戶，username: " + username));
-        Cart cart = user.getCart();
+    public Cart updateQuantity(String userId, String itemId, int quantity) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("購物車不存在"));
 
         Cart.CartItem item = cart.getItems().stream()
-                .filter((i -> i.getProductID().equals(productId)))
+                .filter(i -> i.getItemId().equals(itemId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("購物車找不到該商品"));
+                .orElseThrow(() -> new RuntimeException("購物車找不到該商品項目"));
 
-        if (quantity <= 0){
+        if (quantity <= 0) {
+            // 數量 <= 0 則移除項目
             cart.getItems().remove(item);
         } else {
+            // 更新數量
             item.setQuantity(quantity);
         }
 
-        userRepository.save(user);
-        return cart;
+        return cartRepository.save(cart);
     }
 
     /**
-     * 從使用者購物車移除商品
+     * 從購物車移除商品（透過 itemId）
      */
-    public Cart removeCart(String username, String productId){
-        User user = userRepository.findByUserName(username)
-                .orElseThrow(()->new RuntimeException("找不到用戶，username: " + username));
-        Cart cart = user.getCart();
+    public Cart removeItem(String userId, String itemId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("購物車不存在"));
 
-        cart.getItems().removeIf(item -> item.getProductID().equals(productId));
+        cart.getItems().removeIf(item -> item.getItemId().equals(itemId));
 
-        userRepository.save(user);
-        return cart;
+        return cartRepository.save(cart);
     }
 
-    public void clearCart(String username){
-        User user = userRepository.findByUserName(username)
-                .orElseThrow(()->new RuntimeException("找不到用戶，username: " + username));
+    /**
+     * 清空購物車
+     */
+    public void clearCart(String userId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("購物車不存在"));
 
-        user.getCart().getItems().clear();
-        userRepository.save(user);
+        cart.getItems().clear();
+        cartRepository.save(cart);
     }
-
-
-    private User getUserByUsername(String username) {
-        return userRepository.findByUserName(username)
-                .orElseThrow(() -> new RuntimeException("找不到用戶，username: " + username));
-    }
-
 }
-

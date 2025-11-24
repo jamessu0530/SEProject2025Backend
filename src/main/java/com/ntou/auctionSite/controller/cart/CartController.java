@@ -1,12 +1,11 @@
 package com.ntou.auctionSite.controller.cart;
 
 import com.ntou.auctionSite.dto.cart.AddToCartRequest;
+import com.ntou.auctionSite.dto.cart.CartResponseDTO;
 import com.ntou.auctionSite.dto.cart.UpdateCartQuantityRequest;
-import com.ntou.auctionSite.model.cart.Cart;
 import com.ntou.auctionSite.service.cart.CartService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -28,13 +27,12 @@ public class CartController {
     private final CartService cartService;
 
     /**
-     * 取得使用者購物車
-     * GET /api/cart
+     * 取得使用者購物車（含完整商品資訊）
      */
     @GetMapping
     @Operation(
             summary = "取得購物車",
-            description = "取得當前登入使用者的購物車內容，包含所有已加入的商品及數量"
+            description = "取得當前登入使用者的購物車，包含商品完整資訊（名稱、價格、圖片、賣家等）"
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -42,204 +40,85 @@ public class CartController {
                     description = "成功取得購物車",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Cart.class),
-                            examples = @ExampleObject(
-                                    name = "購物車範例",
-                                    value = """
-                                    {
-                                      "items": [
-                                        {
-                                          "productId": "product123",
-                                          "quantity": 2
-                                        },
-                                        {
-                                          "productId": "product456",
-                                          "quantity": 1
-                                        }
-                                      ]
-                                    }
-                                    """
-                            )
+                            schema = @Schema(implementation = CartResponseDTO.class)
                     )
             ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "未授權 - JWT token 無效或過期",
-                    content = @Content(
-                            examples = @ExampleObject(
-                                    value = "{\"error\": \"Unauthorized\"}"
-                            )
-                    )
-            )
+            @ApiResponse(responseCode = "401", description = "未授權")
     })
-    public ResponseEntity<Cart> getCart(Authentication authentication) {
-        String username = authentication.getName();
-        Cart cart = cartService.getCart(username);
+    public ResponseEntity<CartResponseDTO> getCart(Authentication authentication) {
+        String userId = authentication.getName();  // 從 JWT 取得 userId
+        CartResponseDTO cart = cartService.getUserCart(userId);
         return ResponseEntity.ok(cart);
     }
 
     /**
      * 加入商品到購物車
-     * POST /api/cart/items
      */
     @PostMapping("/items")
     @Operation(
             summary = "加入商品到購物車",
-            description = "將指定商品以指定數量加入到購物車中"
+            description = "將指定商品以指定數量加入購物車，若已存在則累加數量"
     )
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "成功加入購物車",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = Cart.class),
-                            examples = @ExampleObject(
-                                    name = "加入商品後的購物車",
-                                    value = """
-                                    {
-                                      "items": [
-                                        {
-                                          "productId": "product123",
-                                          "quantity": 3
-                                        }
-                                      ]
-                                    }
-                                    """
-                            )
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "請求參數錯誤",
-                    content = @Content(
-                            examples = @ExampleObject(
-                                    value = "{\"error\": \"Invalid request\"}"
-                            )
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "未授權 - JWT token 無效或過期"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "商品不存在"
-            )
+            @ApiResponse(responseCode = "200", description = "成功加入購物車"),
+            @ApiResponse(responseCode = "400", description = "請求參數錯誤"),
+            @ApiResponse(responseCode = "404", description = "商品不存在")
     })
-    public ResponseEntity<Cart> addToCart(
+    public ResponseEntity<String> addToCart(
             Authentication authentication,
             @Valid @RequestBody AddToCartRequest request
     ) {
-        String username = authentication.getName();
-        Cart cart = cartService.addToCart(username, request.productId(), request.quantity());
-        return ResponseEntity.ok(cart);
+        String userId = authentication.getName();
+        cartService.addToCart(userId, request.productId(), request.quantity());
+        return ResponseEntity.ok("商品已加入購物車");
     }
 
     /**
-     * 更新購物車商品數量
-     * PUT /api/cart/items/{productId}
-     * 如果數量設為0，將移除該商品
+     * 更新購物車商品數量（透過 itemId）
      */
-    @PutMapping("/items/{productId}")
+    @PutMapping("/items/{itemId}")
     @Operation(
             summary = "更新購物車商品數量",
-            description = "更新購物車中指定商品的數量，數量為 0 時將移除該商品"
+            description = "更新購物車中指定項目的數量，數量為 0 時將移除該項目"
     )
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "成功更新購物車",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = Cart.class),
-                            examples = @ExampleObject(
-                                    name = "更新後的購物車",
-                                    value = """
-                                    {
-                                      "items": [
-                                        {
-                                          "productId": "product123",
-                                          "quantity": 5
-                                        }
-                                      ]
-                                    }
-                                    """
-                            )
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "請求參數錯誤"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "未授權 - JWT token 無效或過期"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "商品不存在於購物車中"
-            )
+            @ApiResponse(responseCode = "200", description = "更新成功"),
+            @ApiResponse(responseCode = "404", description = "購物車項目不存在")
     })
-    public ResponseEntity<Cart> updateQuantity(
+    public ResponseEntity<String> updateQuantity(
             Authentication authentication,
-            @Parameter(description = "商品 ID", required = true, example = "product123")
-            @PathVariable String productId,
+            @PathVariable String itemId,
             @Valid @RequestBody UpdateCartQuantityRequest request
     ) {
-        String username = authentication.getName();
-        Cart cart = cartService.updateQuantity(username, productId, request.quantity());
-        return ResponseEntity.ok(cart);
+        String userId = authentication.getName();
+        cartService.updateQuantity(userId, itemId, request.quantity());
+        return ResponseEntity.ok("數量已更新");
     }
 
     /**
-     * 從購物車移除商品
-     * DELETE /api/cart/items/{productId}
+     * 從購物車移除商品（透過 itemId）
      */
-    @DeleteMapping("/items/{productId}")
+    @DeleteMapping("/items/{itemId}")
     @Operation(
             summary = "從購物車移除商品",
-            description = "從購物車中移除指定的商品"
+            description = "從購物車中移除指定的項目"
     )
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "成功移除商品",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = Cart.class),
-                            examples = @ExampleObject(
-                                    name = "移除後的購物車",
-                                    value = """
-                                    {
-                                      "items": []
-                                    }
-                                    """
-                            )
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "未授權 - JWT token 無效或過期"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "商品不存在於購物車中"
-            )
+            @ApiResponse(responseCode = "200", description = "成功移除商品"),
+            @ApiResponse(responseCode = "404", description = "購物車項目不存在")
     })
-    public ResponseEntity<Cart> removeFromCart(
+    public ResponseEntity<String> removeFromCart(
             Authentication authentication,
-            @Parameter(description = "商品 ID", required = true, example = "product123")
-            @PathVariable String productId
+            @Parameter(description = "購物車項目 ID", required = true)
+            @PathVariable String itemId
     ) {
-        String username = authentication.getName();
-        Cart cart = cartService.removeCart(username, productId);
-        return ResponseEntity.ok(cart);
+        String userId = authentication.getName();
+        cartService.removeItem(userId, itemId);
+        return ResponseEntity.ok("商品已移除");
     }
 
     /**
      * 清空購物車
-     * DELETE /api/cart
      */
     @DeleteMapping
     @Operation(
@@ -247,18 +126,12 @@ public class CartController {
             description = "清空當前使用者的購物車，移除所有商品"
     )
     @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "成功清空購物車"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "未授權 - JWT token 無效或過期"
-            )
+            @ApiResponse(responseCode = "204", description = "成功清空購物車"),
+            @ApiResponse(responseCode = "401", description = "未授權")
     })
     public ResponseEntity<Void> clearCart(Authentication authentication) {
-        String username = authentication.getName();
-        cartService.clearCart(username);
+        String userId = authentication.getName();
+        cartService.clearCart(userId);
         return ResponseEntity.noContent().build();
     }
 }

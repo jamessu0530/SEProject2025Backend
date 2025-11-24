@@ -25,7 +25,7 @@ public class OrderController {
                 if (item == null) {
                     return ResponseEntity.badRequest().body("No Auction product in cart!");
                 }
-                Product auctionProduct = productService.getProductById(item.getProductID());
+                Product auctionProduct = productService.getProductById(item.getProductId());
 
                 Order createdOrder = orderService.createOrder(
                         order,
