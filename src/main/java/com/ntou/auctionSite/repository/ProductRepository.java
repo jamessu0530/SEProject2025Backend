@@ -12,6 +12,7 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends MongoRepository<Product, String> {
 
+    List<Product> findBySellerID(String sellerID);
     List<Product> findByProductType(ProductTypes types);//查找是拍賣類還是直購類
     List<Product> findBySellerIDAndProductName(String sellerID, String productName);
     List<Product> findByProductName(String productName);
