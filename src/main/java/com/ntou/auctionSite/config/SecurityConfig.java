@@ -43,7 +43,8 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/user/*/seller").permitAll()
                     .requestMatchers("/api/products/**").authenticated()
                     .requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // 允許訪問 Swagger UI
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**","/api/search", "/api/blursearch").permitAll() // 允許訪問 Swagger UI
+                   
                     .anyRequest().authenticated();
                     }
             )
