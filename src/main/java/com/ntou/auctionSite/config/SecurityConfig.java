@@ -39,13 +39,13 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 啟用 CORS
             .csrf(csrf -> csrf.disable())                          // 禁用 CSRF 保護
             .authorizeHttpRequests( auth -> { auth
-                    .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll() // 允許所有人訪問商品列表和詳情
-                    .requestMatchers(HttpMethod.GET, "/api/user/*").permitAll() // 允許訪問使用者公開資訊（含聊天功能）
-                    .requestMatchers("/api/products/**").authenticated()
-                    .requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**","/api/search", "/api/blursearch").permitAll() // 允許訪問 Swagger UI
-                   
-                    .anyRequest().authenticated();
+                    .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()  // 允許所有人訪問商品列表和詳情
+                    .requestMatchers(HttpMethod.GET, "/api/user/*").permitAll()       // 允許訪問使用者公開資訊（含聊天功能）
+                    .requestMatchers("/api/products/**").authenticated()              // 其他商品相關請求需要認證
+                    .requestMatchers("/api/auth/**").permitAll()                      // 允許所有人訪問認證相關的端點
+                    .requestMatchers("/api/search", "/api/blursearch").permitAll()    // 允許所有人訪問搜尋端點
+                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // 允許訪問 Swagger UI
+                    .anyRequest().authenticated();                                             // 其他請求需要認證
                     }
             )
             .sessionManagement(session -> session. // 無狀態 session

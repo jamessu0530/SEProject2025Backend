@@ -12,6 +12,9 @@ public class UserDetails implements UserDetailsService {
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     * 從資料庫中載入使用者資訊，以供 Spring Security 認證使用
+     */
     @Override
     public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // 因為 User 已經實作了 UserDetails，直接返回即可

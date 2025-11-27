@@ -23,7 +23,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User implements UserDetails {
+public class User implements UserDetails { // 使用者實作 UserDetails 介面以支援 Spring Security
 
     @Id
     private String id;              // 使用者 ID
@@ -50,10 +50,9 @@ public class User implements UserDetails {
 
     private Boolean isBanned;       //是否被封鎖
 
-    // 實作 UserDetails (這裡有空要回來檢視一下有沒有必要 因為後來沒有分買家賣家)
-    @Override
+     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     @Override
@@ -87,7 +86,7 @@ public class User implements UserDetails {
     }
 
 
-
+    // 還沒有用到的欄位
     private ArrayList<browseHistory> browseHistoryArrayList;
     private ArrayList<purchaseHistory> purchaseHistoryArrayList;
     private ArrayList<bidHistory> bidHistoryArrayList;
