@@ -19,7 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import com.ntou.auctionSite.dto.user.SellerInfoResponse;
 
 /**
  * 使用者管理 Controller
@@ -40,7 +39,7 @@ public class UserController {
     @GetMapping("/me")
     @Operation(
             summary = "取得當前使用者資訊",
-            description = "取得當前登入使用者的詳細資訊"
+            description = "取得當前登入使用者的詳細資訊，包含正在販售的商品列表"
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -61,7 +60,21 @@ public class UserController {
                                       "phoneNumber": "0912345678",
                                       "averageRating": 4.5,
                                       "ratingCount": 10,
-                                      "isBanned": false
+                                      "isBanned": false,
+                                      "sellingProducts": [
+                                        {
+                                          "productID": "prod123",
+                                          "sellerID": "507f1f77bcf86cd799439011",
+                                          "productName": "二手 iPhone 13",
+                                          "productDescription": "狀況良好，僅使用一年",
+                                          "productPrice": 15000,
+                                          "productImage": "https://example.com/image.jpg",
+                                          "productType": "DIRECT",
+                                          "productStock": 1,
+                                          "productCategory": "3C產品",
+                                          "productStatus": "ACTIVE"
+                                        }
+                                      ]
                                     }
                                     """
                             )
@@ -110,7 +123,8 @@ public class UserController {
                                       "phoneNumber": "0912345678",
                                       "averageRating": 4.5,
                                       "ratingCount": 10,
-                                      "isBanned": false
+                                      "isBanned": false,
+                                      "sellingProducts": []
                                     }
                                     """
                             )
@@ -202,12 +216,13 @@ public class UserController {
     @Operation(
             summary = "取得使用者公開資訊",
             description = """
-                    根據使用者 ID 取得該使用者的公開資訊。
+                    根據使用者 ID 取得該使用者的公開資訊，包含正在販售的商品列表。
                     
                     **用途**：
                     - 查看其他使用者的基本資料
                     - 聊天功能顯示對方資訊
                     - 商品頁面顯示賣家資訊
+                    - 查看賣家正在販售的所有商品
                     
                     **注意**：此 API 不需要登入，且不會返回敏感資訊（如 email）
                     """
@@ -215,7 +230,7 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
-                    description = "成功取得使用者資訊",
+                    description = "成功取得使用者資訊和販售商品",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = PublicUserInfoResponse.class),
@@ -230,7 +245,21 @@ public class UserController {
                                       "phoneNumber": "0912345678",
                                       "averageRating": 4.5,
                                       "ratingCount": 10,
-                                      "isBanned": false
+                                      "isBanned": false,
+                                      "sellingProducts": [
+                                        {
+                                          "productID": "prod123",
+                                          "sellerID": "507f1f77bcf86cd799439011",
+                                          "productName": "二手 iPhone 13",
+                                          "productDescription": "狀況良好，僅使用一年",
+                                          "productPrice": 15000,
+                                          "productImage": "https://example.com/image.jpg",
+                                          "productType": "DIRECT",
+                                          "productStock": 1,
+                                          "productCategory": "3C產品",
+                                          "productStatus": "ACTIVE"
+                                        }
+                                      ]
                                     }
                                     """
                             )

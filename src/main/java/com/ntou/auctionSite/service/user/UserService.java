@@ -4,15 +4,14 @@ import com.ntou.auctionSite.dto.user.UpdatePasswordRequest;
 import com.ntou.auctionSite.dto.user.UpdateUserRequest;
 import com.ntou.auctionSite.dto.user.UserInfoResponse;
 import com.ntou.auctionSite.dto.user.PublicUserInfoResponse;
+import com.ntou.auctionSite.model.product.Product;
 import com.ntou.auctionSite.model.user.User;
+import com.ntou.auctionSite.repository.ProductRepository;
 import com.ntou.auctionSite.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.ntou.auctionSite.dto.user.SellerInfoResponse;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,12 +25,17 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final ProductRepository productRepository;
+
     /**
      * 獲取使用者資訊
      */
     public UserInfoResponse getUserInfo(String username) {
         User user = userRepository.findByUserName(username)
                 .orElseThrow(() -> new RuntimeException("使用者不存在"));
+
+        // 取得該使用者正在販售的商品
+        List<Product> sellingProducts = productRepository.findBySellerID(user.getId());
 
         return new UserInfoResponse(
                 user.getId(),
@@ -42,7 +46,8 @@ public class UserService {
                 user.getPhoneNumber(),
                 user.getAverageRating() != null ? user.getAverageRating() : 0.0f,
                 user.getRatingCount() != null ? user.getRatingCount() : 0,
-                user.getIsBanned() != null ? user.getIsBanned() : false
+                user.getIsBanned() != null ? user.getIsBanned() : false,
+                sellingProducts
         );
     }
 
@@ -90,6 +95,9 @@ public class UserService {
 
         user = userRepository.save(user);
 
+        // 取得該使用者正在販售的商品
+        List<Product> sellingProducts = productRepository.findBySellerID(user.getId());
+
         return new UserInfoResponse(
                 user.getId(),
                 user.getUsername(),
@@ -99,7 +107,8 @@ public class UserService {
                 user.getPhoneNumber(),
                 user.getAverageRating() != null ? user.getAverageRating() : 0.0f,
                 user.getRatingCount() != null ? user.getRatingCount() : 0,
-                user.getIsBanned() != null ? user.getIsBanned() : false
+                user.getIsBanned() != null ? user.getIsBanned() : false,
+                sellingProducts
         );
     }
 
@@ -132,6 +141,9 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("使用者不存在"));
 
+        // 取得該使用者正在販售的商品
+        List<Product> sellingProducts = productRepository.findBySellerID(userId);
+
         return new PublicUserInfoResponse(
                 user.getId(),
                 user.getUsername(),
@@ -140,7 +152,8 @@ public class UserService {
                 user.getPhoneNumber(),
                 user.getAverageRating() != null ? user.getAverageRating() : 0.0f,
                 user.getRatingCount() != null ? user.getRatingCount() : 0,
-                user.getIsBanned() != null ? user.getIsBanned() : false
+                user.getIsBanned() != null ? user.getIsBanned() : false,
+                sellingProducts
         );
     }
 

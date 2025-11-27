@@ -1,6 +1,9 @@
 package com.ntou.auctionSite.dto.user;
 
+import com.ntou.auctionSite.model.product.Product;
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.util.List;
 
 /**
  * 使用者資訊回應
@@ -32,7 +35,10 @@ public record UserInfoResponse(
         int ratingCount,
 
         @Schema(description = "是否被封鎖", example = "false")
-        boolean isBanned
+        boolean isBanned,
+
+        @Schema(description = "正在販售的商品列表")
+        List<Product> sellingProducts
 ) {
 }
 
